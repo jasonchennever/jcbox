@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>車輛調度系統</title>
+    <style>
+        /* 基本樣式 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background-color: #f0f0f0;
+            padding: 16px;
+        }
+
+        /* 主容器 */
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 16px;
+        }
+
+        /* 導航按鈕 */
+        .nav-buttons {
+            display: flex;
+            margin-bottom: 16px;
+            gap: 16px;
+        }
+
+        .nav-button {
+            padding: 8px 16px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .nav-button.active {
+            background-color: #2563eb;
+            color: white;
+        }
+
+        .nav-button:not(.active) {
+            background-color: #e5e7eb;
+            color: #111;
+        }
+
+        /* 頁面佈局 */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* 車輛展示區域 */
+        .flex-container {
+            display: flex;
+            gap: 8px;
+        }
+
+        .column {
+            background-color: #1e40af;
+            border-radius: 8px;
+            padding: 12px;
+            color: white;
+        }
+
+        .column-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 16px;
+        }
+
+        .column-1-3 {
+            width: 33.333%;
+        }
+
+        .column-1-4 {
+            width: 25%;
+        }
+
+        .column-2-3 {
+            width: 66.666%;
+        }
+
+        .column-3-4 {
+            width: 75%;
+        }
+
+        /* 車輛方塊 */
+        .vehicle-card {
+            margin-bottom: 8px;
+            padding: 8px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+        }
+
+        .vehicle-info {
+            font-weight: 500;
+            color: black;
+        }
+
+        .vehicle-card-gray {
+            background-color: #9ca3af;
+        }
+
+        .vehicle-card-red {
+            background-color: #ef4444;
+        }
+
+        .vehicle-card-yellow {
+            background-color: #f59e0b;
+        }
+
+        .vehicle-card-green {
+            background-color: #10b981;
+        }
+
+        .vehicle-card-blue {
+            background-color: #3b82f6;
+        }
+
+        .vehicle-card-purple {
+            background-color: #8b5cf6;
+        }
+
+        /* 站牌格子 */
+        .platform-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .platform-cell {
+            background-color: #047857;
+            padding: 8px;
+            border-radius: 8px;
+        }
+
+        .platform-title {
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .platform-vehicle {
+            background-color: #10b981;
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .platform-status {
+            background-color: #9ca3af;
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        /* 按鈕樣式 */
+        .btn {
+            padding: 4px 8px;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .btn-blue {
+            background-color: #1e40af;
+        }
+
+        .btn-blue:hover {
+            background-color: #1e3a8a;
+        }
+
+        .btn-gray {
+            background-color: #4b5563;
+        }
+
+        .btn-gray:hover {
+            background-color: #374151;
+        }
+
+        /* 表單 */
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            background-color: #1e40af;
+            padding: 12px;
+            color: white;
+        }
+
+        .form-input {
+            width: 33.333%;
+            padding: 8px;
+            text-align: center;
+            background-color: white;
+            color: black;
+            font-weight: bold;
+        }
+
+        .form-button {
+            width: 16.666%;
+            padding: 8px;
+            text-align: center;
+            background-color: white;
+            color: black;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* 特殊標題 */
+        .section-title {
+            color: white;
+            font-weight: bold;
+            margin: 8px 0;
+        }
+
+        /* 溢出處理 */
+        .overflow-container {
+            overflow-y: auto;
+            max-height: 600px;
+        }
+
+        /* 交通狀態橫幅 */
+        .status-banner {
+            background-color: #2563eb;
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 頁面導航 -->
+        <div class="nav-buttons">
+            <button class="nav-button active" data-page="page1">車站概覽 (圖1)</button>
+            <button class="nav-button" data-page="page2">車輛監控 (圖2)</button>
+            <button class="nav-button" data-page="page3">車輛調度 (圖3)</button>
+        </div>
+
+        <!-- 頁面1：車站概覽 -->
+        <div id="page1" class="page active">
+            <div class="flex-container">
+                <!-- 左側欄 - 站牌車輛 -->
+                <div class="column column-3-4">
+                    <h2 class="column-title">車站資訊</h2>
+                    
+                    <!-- 站牌格子 -->
+                    <div class="platform-grid" id="platformGrid">
+                        <!-- 站牌將通過JavaScript動態生成 -->
+                    </div>
+                    
+                    <!-- 緩衝區 -->
+                    <div class="platform-grid" id="bufferGrid">
+                        <!-- 緩衝區將通過JavaScript動態生成 -->
+                    </div>
+                    
+                    <!-- 全部已進站 -->
+                    <div class="status-banner">全部已進站</div>
+                </div>
+
+                <!-- 右側欄 - 離站車輛 -->
+                <div class="column column-1-4">
+                    <h2 class="column-title">離站車輛</h2>
+                    <div class="overflow-container" id="departingVehicles">
+                        <!-- 離站車輛將通過JavaScript動態生成 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 頁面2：車輛監控 -->
+        <div id="page2" class="page">
+            <div class="flex-container">
+                <!-- 左欄 - 總站車輛 -->
+                <div class="column column-1-3">
+                    <h2 class="column-title">總站車輛</h2>
+                    <div class="overflow-container" id="mainVehiclesPage2">
+                        <!-- 總站車輛將通過JavaScript動態生成 -->
+                    </div>
+                </div>
+
+                <!-- 右欄 - 車站資訊 -->
+                <div class="column column-2-3">
+                    <h2 class="column-title">車站資訊</h2>
+                    
+                    <!-- 站牌格子 - 上排6個 -->
+                    <div class="platform-grid" id="upperPlatforms">
+                        <!-- 上排站牌將通過JavaScript動態生成 -->
+                    </div>
+                    
+                    <!-- 站牌格子 - 下排6個 -->
+                    <div class="platform-grid" id="lowerPlatforms">
+                        <!-- 下排站牌將通過JavaScript動態生成 -->
+                    </div>
+                    
+                    <!-- 預進站車輛 -->
+                    <h3 class="section-title">預進站車輛</h3>
+                    <div class="overflow-container" id="incomingVehiclesPage2">
+                        <!-- 預進站車輛將通過JavaScript動態生成 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 頁面3：車輛調度 -->
+        <div id="page3" class="page">
+            <!-- 頂部操作欄 -->
+            <div class="form-row">
+                <input type="text" id="vehicleName" class="form-input" placeholder="車名">
+                <input type="text" id="vehicleNumber" class="form-input" placeholder="車號">
+                <button id="addVehicleBtn" class="form-button">新增</button>
+            </div>
+
+            <div class="flex-container">
+                <!-- 左欄 - 總站車輛 -->
+                <div class="column column-1-3">
+                    <h2 class="column-title">總站車輛</h2>
+                    <div class="overflow-container" id="mainVehiclesPage3">
+                        <!-- 總站車輛將通過JavaScript動態生成 -->
+                    </div>
+                </div>
+
+                <!-- 中欄 - 進站資訊 -->
+                <div class="column column-1-3">
+                    <h2 class="column-title">進站資訊</h2>
+                    <div class="overflow-container" id="incomingVehiclesPage3">
+                        <!-- 進站資訊將通過JavaScript動態生成 -->
+                    </div>
+                </div>
+
+                <!-- 右欄 - 離站資訊 -->
+                <div class="column column-1-3">
+                    <h2 class="column-title">離站資訊</h2>
+                    <div class="overflow-container" id="departingVehiclesPage3">
+                        <!-- 離站資訊將通過JavaScript動態生成 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化數據
+            const data = {
+                // 車輛資料 - 車輛資訊區
+                mainStationVehicles: [
+                    { id: 'v1', name: '車名1', number: '車號1', status: 'normal', color: 'gray' },
+                    { id: 'v2', name: '車名2', number: '車號2', status: 'normal', color: 'gray' },
+                    { id: 'v3', name: '車名3', number: '車號3', status: 'alert', color: 'red' },
+                    { id: 'v4', name: '車名4', number: '車號4', status: 'warning', color: 'yellow' },
+                    { id: 'v5', name: '車名5', number: '車號5', status: 'warning', color: 'yellow' },
+                    { id: 'v6', name: '車名6', number: '車號6', status: 'warning', color: 'yellow' },
+                    { id: 'v7', name: '車名7', number: '車號7', status: 'warning', color: 'yellow' },
+                    { id: 'v8', name: '車名8', number: '車號8', status: 'alert', color: 'red' },
+                    { id: 'v9', name: '車名9', number: '車號9', status: 'alert', color: 'red' }
+                ],
+                
+                // 車站資訊 - 站牌車輛
+                stationVehicles: {
+                    platforms: [
+                        { id: 1, name: '站牌 1', vehicles: [{ id: 's1-1', name: '車名A1', number: '車號A1' }], status: 'departure' },
+                        { id: 2, name: '站牌 2', vehicles: [{ id: 's2-1', name: '車名A2', number: '車號A2' }], status: 'departure' },
+                        { id: 3, name: '站牌 3', vehicles: [{ id: 's3-1', name: '車名A3', number: '車號A3' }], status: 'departure' },
+                        { id: 4, name: '站牌 4', vehicles: [{ id: 's4-1', name: '車名A4', number: '車號A4' }], status: 'departure' },
+                        { id: 5, name: '站牌 5', vehicles: [{ id: 's5-1', name: '車名A5', number: '車號A5' }], status: 'departure' },
+                        { id: 6, name: '站牌 6', vehicles: [{ id: 's6-1', name: '車名A6', number: '車號A6' }], status: 'departure' },
+                        { id: 7, name: '站牌 7', vehicles: [{ id: 's7-1', name: '車名A7', number: '車號A7' }], status: 'departure' },
+                        { id: 8, name: '站牌 8', vehicles: [{ id: 's8-1', name: '車名A8', number: '車號A8' }], status: 'departure' },
+                        { id: 9, name: '站牌 9', vehicles: [{ id: 's9-1', name: '車名A9', number: '車號A9' }], status: 'departure' },
+                        { id: 10, name: '站牌 10', vehicles: [{ id: 's10-1', name: '車名A10', number: '車號A10' }], status: 'departure' },
+                        { id: 11, name: '站牌 11', vehicles: [{ id: 's11-1', name: '車名A11', number: '車號A11' }], status: 'departure' },
+                        { id: 12, name: '站牌 12', vehicles: [{ id: 's12-1', name: '車名A12', number: '車號A12' }], status: 'departure' }
+                    ],
+                    bufferZones: [
+                        { id: 'buffer1', name: '緩衝區', vehicles: [{ id: 'b1', name: '車名B1', number: '車號B1' }] },
+                        { id: 'buffer2', name: '緩衝區', vehicles: [] },
+                        { id: 'buffer3', name: '緩衝區', vehicles: [] },
+                        { id: 'buffer4', name: '緩衝區', vehicles: [{ id: 'b4', name: '車名B4', number: '車號B4' }] },
+                        { id: 'buffer5', name: '緩衝區', vehicles: [] },
+                        { id: 'buffer6', name: '緩衝區', vehicles: [] }
+                    ],
+                    incomingVehicles: [
+                        { id: 'in1', name: '車名C1', number: '車號C1' },
+                        { id: 'in2', name: '車名C2', number: '車號C2' },
+                        { id: 'in3', name: '車名C3', number: '車號C3' },
+                        { id: 'in4', name: '車名C4', number: '車號C4' },
+                        { id: 'in5', name: '車名C5', number: '車號C5' },
+                        { id: 'in6', name: '車名C6', number: '車號C6' }
+                    ]
+                },
+                
+                // 離站車輛
+                departingVehicles: [
+                    { id: 'd1', name: '車名X', number: '車號X' },
+                    { id: 'd2', name: '車名Y', number: '車號Y' },
+                    { id: 'd3', name: '車名Z', number: '車號Z' },
+                    { id: 'd4', name: '車名W', number: '車號W' },
+                    { id: 'd5', name: '車名V', number: '車號V' },
+                    { id: 'd6', name: '車名U', number: '車號U' },
+                    { id: 'd7', name: '車名T', number: '車號T' },
+                    { id: 'd8', name: '車名S', number: '車號S' },
+                    { id: 'd9', name: '車名R', number: '車號R' },
+                    { id: 'd10', name: '車名Q', number: '車號Q' }
+                ]
+            };
+
+            // 頁面切換
+            const navButtons = document.querySelectorAll('.nav-button');
+            const pages = document.querySelectorAll('.page');
+
+            navButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetPage = this.dataset.page;
+                    
+                    // 更新按鈕狀態
+                    navButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // 更新頁面顯示
+                    pages.forEach(page => {
+                        if (page.id === targetPage) {
+                            page.classList.add('active');
+                        } else {
+                            page.classList.remove('active');
+                        }
+                    });
+                });
+            });
+
+            // 渲染頁面1
+            renderPage1();
+            
+            // 渲染頁面2
+            renderPage2();
+            
+            // 渲染頁面3
+            renderPage3();
+            
+            // 初始化拖曳功能
+            initSortable();
+            
+            // 添加新增車輛功能
+            document.getElementById('addVehicleBtn').addEventListener('click', addNewVehicle);
+            
+            // 頁面1渲染函數
+            function renderPage1() {
+                // 渲染站牌
+                const platformGrid = document.getElementById('platformGrid');
+                platformGrid.innerHTML = '';
+                
+                data.stationVehicles.platforms.forEach(platform => {
+                    const platformDiv = document.createElement('div');
+                    platformDiv.className = 'platform-cell';
+                    platformDiv.innerHTML = `
+                        <h3 class="platform-title">${platform.name}</h3>
+                        <div class="platform-vehicle">
+                            ${platform.vehicles.length > 0 
+                                ? `${platform.vehicles[0].name} / ${platform.vehicles[0].number}`
+                                : '空車位'}
+                        </div>
+                        <div class="platform-status">已離站</div>
+                    `;
+                    platformGrid.appendChild(platformDiv);
+                });
+                
+                // 渲染緩衝區
+                const bufferGrid = document.getElementById('bufferGrid');
+                bufferGrid.innerHTML = '';
+                
+                data.stationVehicles.bufferZones.forEach(buffer => {
+                    const bufferDiv = document.createElement('div');
+                    bufferDiv.className = 'platform-cell';
+                    bufferDiv.style.backgroundColor = '#8b5cf6'; // 紫色背景
+                    
+                    bufferDiv.innerHTML = `
+                        <h3 class="platform-title">${buffer.name}</h3>
+                        <div class="platform-vehicle" style="background-color: #c4b5fd;">
+                            ${buffer.vehicles.length > 0 
+                                ? `${buffer.vehicles[0].name} / ${buffer.vehicles[0].number}`
+                                : '空車位'}
+                        </div>
+                    `;
+                    bufferGrid.appendChild(bufferDiv);
+                });
+                
+                // 渲染離站車輛
+                const departingVehicles = document.getElementById('departingVehicles');
+                departingVehicles.innerHTML = '';
+                
+                data.departingVehicles.forEach(vehicle => {
+                    const vehicleDiv = document.createElement('div');
+                    vehicleDiv.className = 'vehicle-card vehicle-card-gray';
+                    vehicleDiv.innerHTML = `
+                        <div class="vehicle-info">
+                            ${vehicle.name} / ${vehicle.number}
+                        </div>
+                    `;
+                    departingVehicles.appendChild(vehicleDiv);
+                });
+            }
+            
+            // 頁面2渲染函數
+            function renderPage2() {
+                // 渲染總站車輛
+                const mainVehicles = document.getElementById('mainVehiclesPage2');
+                mainVehicles.innerHTML = '';
+                
+                data.mainStationVehicles.forEach((vehicle, index) => {
+                    const vehicleDiv = document.createElement('div');
+                    vehicleDiv.className = `vehicle-card ${index < 5 ? 'vehicle-card-yellow' : 'vehicle-card-red'}`;
+                    vehicleDiv.innerHTML = `
+                        <div class="vehicle-info">
+                            ${vehicle.name} / ${vehicle.number}
+                        </div>
+                        <button class="btn btn-blue">Status</button>
+                    `;
+                    mainVehicles.appendChild(vehicleDiv);
+                });
+                
+                // 渲染上排站牌
+                const upperPlatforms = document.getElementById('upperPlatforms');
+                upperPlatforms.innerHTML = '';
+                
+                data.stationVehicles.platforms.slice(6, 12).forEach(platform => {
+                    const platformDiv = document.createElement('div');
+                    platformDiv.className = 'platform-cell';
+                    platformDiv.innerHTML = `
+                        <h3 class="platform-title">${platform.name}</h3>
+                        <div class="platform-vehicle">
+                            ${platform.vehicles.length > 0 
+                                ? `${platform.vehicles[0].name} / ${platform.vehicles[0].number}`
+                                : '空車位'}
+                        </div>
+                    `;
+                    upperPlatforms.appendChild(platformDiv);
+                });
+                
+                // 渲染下排站牌
+                const lowerPlatforms = document.getElementById('lowerPlatforms');
+                lowerPlatforms.innerHTML = '';
+                
+                data.stationVehicles.platforms.slice(0, 6).forEach(platform => {
+                    const platformDiv = document.createElement('div');
+                    platformDiv.className = 'platform-cell';
+                    platformDiv.innerHTML = `
+                        <h3 class="platform-title">${platform.name}</h3>
+                        <div class="platform-vehicle">
+                            ${platform.vehicles.length > 0 
+                                ? `${platform.vehicles[0].name} / ${platform.vehicles[0].number}`
+                                : '空車位'}
+                        </div>
+                    `;
+                    lowerPlatforms.appendChild(platformDiv);
+                });
+                
+                // 渲染預進站車輛
+                const incomingVehicles = document.getElementById('incomingVehiclesPage2');
+                incomingVehicles.innerHTML = '';
+                
+                data.stationVehicles.incomingVehicles.forEach(vehicle => {
+                    const vehicleDiv = document.createElement('div');
+                    vehicleDiv.className = 'vehicle-card vehicle-card-green';
+                    vehicleDiv.innerHTML = `
+                        <div class="vehicle-info">
+                            ${vehicle.name} / ${vehicle.number}
+                        </div>
+                    `;
+                    incomingVehicles.appendChild(vehicleDiv);
+                });
+            }
+            
+            // 頁面3渲染函數
+            function renderPage3() {
+                // 渲染總站車輛
+                const mainVehicles = document.getElementById('mainVehiclesPage3');
+                mainVehicles.innerHTML = '';
+                
+                data.mainStationVehicles.forEach(vehicle => {
+                    let colorClass = 'vehicle-card-gray';
+                    if (vehicle.color === 'red') colorClass = 'vehicle-card-red';
+                    else if (vehicle.color === 'yellow') colorClass = 'vehicle-card-yellow';
+                    
+                    const vehicleDiv = document.createElement('div');
+                    vehicleDiv.className = `vehicle-card ${colorClass}`;
+                    vehicleDiv.dataset.id = vehicle.id;
+                    vehicleDiv.draggable = true;
+                    
+                    vehicleDiv.innerHTML = `
+                        <div class="vehicle-info">
+                            ${vehicle.name} / ${vehicle.number}
+                        </div>
+                        <div class="button-group">
+                            <button class="btn btn-blue">Status</button>
+                            <button class="btn btn-gray toggle-status" data-id="${vehicle.id}">狀態切換</button>
+                            <button class="btn btn-gray delete-vehicle" data-id="${vehicle.id}" data-section="main">刪除</button>
+                        </div>
+                    `;
+                    mainVehicles.appendChild(vehicleDiv);
+                    
+                    // 添加事件監聽器
+                    vehicleDiv.querySelector('.toggle-status').addEventListener('click', function() {
+                        toggleStatus(this.dataset.id);
+                    });
+                    
+                    vehicleDiv.querySelector('.delete-vehicle').addEventListener('click', function() {
+                        removeVehicle(this.dataset.id, this.dataset.section);
+                    });
+                });
+                
+                // 渲染進站資訊
+                const incomingVehicles = document.getElementById('incomingVehiclesPage3');
+                incomingVehicles.innerHTML = '';
+                
+                data.stationVehicles.incomingVehicles.forEach(vehicle => {
+                    const vehicleDiv = document.createElement('div');
+                    vehicleDiv.className = 'vehicle-card vehicle-card-green';
+                    vehicleDiv.innerHTML = `
+                        <div class="vehicle-info">
+                            ${vehicle.name} / ${vehicle.number}
+                        </div>
+                        <button class="btn btn-blue">Status</button>
+                    `;
+                    incomingVehicles.appendChild(vehicleDiv);
+                });
+                
+                // 添加藍色車輛
+                const blueVehicle1 = document.createElement('div');
+                blueVehicle1.className = 'vehicle-card vehicle-card-blue';
+                blueVehicle1.innerHTML = `
+                    <div class="vehicle-info">車名P / 車號P</div>
+                    <button class="btn btn-blue">Status</button>
+                `;
+                incomingVehicles.appendChild(blueVehicle1);
+                
+                const blueVehicle2 = document.createElement('div');
+                blueVehicle2.className = 'vehicle-card vehicle-card-blue';
+                blueVehicle2.innerHTML = `
+                    <div class="vehicle-info">車名Q / 車號Q</div>
+                    <button class="btn btn-blue">Status</button>
+                `;
+                incomingVehicles.appendChild(blueVehicle2);
+                
+                // 渲染離站資訊
+                const departingVehicles = document.getElementById('departingVehiclesPage3');
+                departingVehicles.innerHTML = '';
+                
+                data.departingVehicles.slice(0, 8).forEach(vehicle => {
+                    const vehicleDiv = document.createElement('div');
+                    vehicleDiv.className = 'vehicle-card vehicle-card-gray';
+                    vehicleDiv.dataset.id = vehicle.id;
+                    
+                    vehicleDiv.innerHTML = `
+                        <div class="vehicle-info">
+                            ${vehicle.name} / ${vehicle.number}
+                        </div>
+                        <button class="btn btn-gray delete-vehicle" data-id="${vehicle.id}" data-section="departing">刪除</button>
+                    `;
+                    departingVehicles.appendChild(vehicleDiv);
+                    
+                    // 添加事件監聽器
+                    vehicleDiv.querySelector('.delete-vehicle').addEventListener('click', function() {
+                        removeVehicle(this.dataset.id, this.dataset.section);
+                    });
+                });
+            }
+            
+            // 處理狀態切換
+            function toggleStatus(id) {
+                data.mainStationVehicles = data.mainStationVehicles.map(vehicle => 
+                    vehicle.id === id ? {
+                        ...vehicle, 
+                        status: vehicle.status === 'normal' ? 'warning' : 
+                                 vehicle.status === 'warning' ? 'alert' : 'normal',
+                        color: vehicle.status === 'normal' ? 'yellow' : 
+                               vehicle.status === 'warning' ? 'red' : 'gray'
+                    } : vehicle
+                );
+                
+                // 重新渲染頁面3
+                renderPage3();
+            }
+            
+            // 處理刪除
+            function removeVehicle(id, section) {
+                if (section === 'main') {
+                    data.mainStationVehicles = data.mainStationVehicles.filter(vehicle => vehicle.id !== id);
+                    renderPage3();  // 重新渲染頁面3的總站車輛
+                } else if (section === 'departing') {
+                    data.departingVehicles = data.departingVehicles.filter(vehicle => vehicle.id !== id);
+                    renderPage3();  // 重新渲染頁面3的離站車輛
+                }
+            }
+            
+            // 新增車輛
+            function addNewVehicle() {
+                const vehicleNameInput = document.getElementById('vehicleName');
+                const vehicleNumberInput = document.getElementById('vehicleNumber');
+                
+                const name = vehicleNameInput.value.trim();
+                const number = vehicleNumberInput.value.trim();
+                
+                if (!name || !number) {
+                    alert('請輸入車名和車號');
+                    return;
+                }
+                
+                const newId = `v${data.mainStationVehicles.length + 1}`;
+                const newVehicle = {
+                    id: newId,
+                    name: name,
+                    number: number,
+                    status: 'normal',
+                    color: 'gray'
+                };
+                
+                data.mainStationVehicles.push(newVehicle);
+                
+                // 清空輸入框
+                vehicleNameInput.value = '';
+                vehicleNumberInput.value = '';
+                
+                // 重新渲染頁面3
+                renderPage3();
+            }
+            
+            // 初始化拖拽
+            function initSortable() {
+                // 頁面3的總站車輛拖拽
+                new Sortable(document.getElementById('mainVehiclesPage3'), {
+                    animation: 150,
+                    onEnd: function(evt) {
+                        // 重新排序數據
+                        const item = data.mainStationVehicles.splice(evt.oldIndex, 1)[0];
+                        data.mainStationVehicles.splice(evt.newIndex, 0, item);
+                    }
+                });
+                
+                // 頁面3的進站資訊拖拽
+                new Sortable(document.getElementById('incomingVehiclesPage3'), {
+                    animation: 150
+                });
+                
+                // 頁面3的離站資訊拖拽
+                new Sortable(document.getElementById('departingVehiclesPage3'), {
+                    animation: 150
+                });
+            }
+        });
+    </script>
+</body>
+</html> 
